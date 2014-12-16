@@ -7,23 +7,28 @@
 
 ### Type Classes
 
-    class Memo a where
-      memo :: forall r. (a -> r) -> a -> Lazy r
+    class Memoize a where
+      memoize :: a -> a
+
+    class Tabulate a where
+      tabulate :: forall r. (a -> r) -> a -> Lazy r
 
 
 ### Type Class Instances
 
-    instance memoBool :: Memo Boolean
+    instance tabulateBool :: Tabulate Boolean
 
-    instance memoEither :: (Memo a, Memo b) => Memo (Either a b)
+    instance tabulateEither :: (Tabulate a, Tabulate b) => Tabulate (Either a b)
 
-    instance memoMaybe :: (Memo a) => Memo (Maybe a)
+    instance tabulateFunction :: (Tabulate a) => Memoize (a -> r)
 
-    instance memoNat :: Memo Number
+    instance tabulateMaybe :: (Tabulate a) => Tabulate (Maybe a)
 
-    instance memoTuple :: (Memo a, Memo b) => Memo (Tuple a b)
+    instance tabulateNat :: Tabulate Number
 
-    instance memoUnit :: Memo Unit
+    instance tabulateTuple :: (Tabulate a, Tabulate b) => Tabulate (Tuple a b)
+
+    instance tabulateUnit :: Tabulate Unit
 
 
 

@@ -8,12 +8,13 @@ import Control.Monad.Eff
 import Debug.Trace
 
 main = do
-  let fib = force <<< memo (\n -> fib' n)
+  let fibonacciSlow 0 = 0
+      fibonacciSlow 1 = 1
+      fibonacciSlow n = fibonacci (n - 1) + 
+                        fibonacci (n - 2)
+      
+      fibonacci = memoize $ \n -> fibonacciSlow n
 
-      fib' 0 = 0
-      fib' 1 = 1
-      fib' n = fib (n - 1) + fib (n - 2)
-
-  print $ fib 100
+  print $ fibonacci 100
 
 
