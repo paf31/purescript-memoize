@@ -17,6 +17,8 @@
 
     instance memoEither :: (Memo a, Memo b) => Memo (Either a b)
 
+    instance memoMaybe :: (Memo a) => Memo (Maybe a)
+
     instance memoNat :: Memo Number
 
     instance memoTuple :: (Memo a, Memo b) => Memo (Tuple a b)

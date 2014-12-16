@@ -3,6 +3,7 @@ module Data.Function.Memoized
   , memo  
   ) where
 
+import Data.Maybe
 import Data.Tuple
 import Data.Either
 import Data.Lazy
@@ -18,6 +19,13 @@ instance memoBool :: Memo Boolean where
   memo f = let r1 = defer (\_ -> f true)
                r2 = defer (\_ -> f false)
            in \b -> if b then r1 else r2
+
+instance memoMaybe :: (Memo a) => Memo (Maybe a) where
+  memo f = let n = defer (\_ -> f Nothing)
+               j = memo (f <<< Just)
+           in \m -> case m of
+                      Nothing -> n
+                      Just a  -> j a
 
 instance memoEither :: (Memo a, Memo b) => Memo (Either a b) where
   memo f = let l = memo (f <<< Left)
