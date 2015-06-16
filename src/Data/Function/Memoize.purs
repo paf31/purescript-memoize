@@ -1,15 +1,27 @@
-module Data.Function.Memoized 
+-- | This module defines functions for _memoizing_ functions, i.e. creating functions which
+-- | remember their results.
+-- |
+-- | This module works by turning a function into a lazily-evaluated data structure depending on
+-- | its codomain type.
+
+module Data.Function.Memoize
   ( Tabulate
   , tabulate  
   , Memoize
   , memoize
   ) where
 
+import Prelude
+
 import Data.Maybe
 import Data.Tuple
 import Data.Either
 import Data.Lazy
+import Data.Int.Bits
+import Data.List
 
+-- | The `Tabulate` class identifies those types which can be used as the codomain of
+-- | a memoized function, i.e. those for which the results can be _tabulated_.
 class Tabulate a where
   tabulate :: forall r. (a -> r) -> a -> Lazy r
 
@@ -45,22 +57,42 @@ data NatTrie a = NatTrie (Lazy a)
                          (Lazy (NatTrie a)) 
                          (Lazy (NatTrie a))
 
-instance tabulateNat :: Tabulate Number where
-  tabulate f = let t = build 0
+instance tabulateNat :: Tabulate Int where
+  tabulate f = go
+    where
+    go :: Int -> Lazy _
+    go 0 = zer
+    go n = walk (bits (if n > 0 then n else (-n))) 
+                (if n > 0 then pos else neg)
+        
+    pos :: NatTrie _
+    pos = build 1
+    
+    neg :: NatTrie _
+    neg = build (-1)
+    
+    zer :: Lazy _
+    zer = defer \_ -> f 0
 
-                   build n = NatTrie (defer (\_ -> f n)) 
-                                     (defer (\_ -> build (n `shl` 1)))
-                                     (defer (\_ -> build ((n `shl` 1) .|. 1)))
+    build :: Int -> NatTrie _
+    build n = NatTrie (defer \_ -> f n)
+                      (defer \_ -> build (n * 2))
+                      (defer \_ -> build (n * 2 + 1))
+    
+    bits :: Int -> List Boolean
+    bits = bits' Nil
+      where
+      bits' acc 1 = acc
+      bits' acc n = bits' (Cons (mod n 2 /= 0) acc) (n / 2)
+    
+    walk :: forall a. List Boolean -> NatTrie a -> Lazy a
+    walk Nil             (NatTrie a _ _) = a
+    walk (Cons false bs) (NatTrie _ l _) = l >>= walk bs
+    walk (Cons true  bs) (NatTrie _ _ r) = r >>= walk bs
 
-                   bits 0 = []
-                   bits n | n % 2 == 0 = bits (n `shr` 1) <> [false]
-                          | otherwise  = bits (n `shr` 1) <> [true]
-
-                   walk [] (NatTrie r _ _) = r
-                   walk (false : bs) (NatTrie _ t _) = t >>= walk bs
-                   walk (true  : bs) (NatTrie _ _ t) = t >>= walk bs
-               in \n -> walk (bits n) t
-
+-- | The `Memoize` class identifies those function types which can be memoized.
+-- | 
+-- | If the codomain type can be tabulated, then functions can be memoized.
 class Memoize a where
   memoize :: a -> a
 
