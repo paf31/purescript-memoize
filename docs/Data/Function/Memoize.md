@@ -18,12 +18,13 @@ a memoized function, i.e. those for which the results can be _tabulated_.
 
 ##### Instances
 ``` purescript
-instance tabulateUnit :: Tabulate Unit
-instance tabulateBool :: Tabulate Boolean
-instance tabulateMaybe :: (Tabulate a) => Tabulate (Maybe a)
-instance tabulateEither :: (Tabulate a, Tabulate b) => Tabulate (Either a b)
-instance tabulateTuple :: (Tabulate a, Tabulate b) => Tabulate (Tuple a b)
-instance tabulateNat :: Tabulate Int
+Tabulate Unit
+Tabulate Boolean
+(Tabulate a) => Tabulate (Maybe a)
+(Tabulate a, Tabulate b) => Tabulate (Either a b)
+(Tabulate a, Tabulate b) => Tabulate (Tuple a b)
+(Tabulate a) => Tabulate (List a)
+Tabulate Int
 ```
 
 #### `Memoize`
@@ -39,7 +40,7 @@ If the domain type can be tabulated, then functions can be memoized.
 
 ##### Instances
 ``` purescript
-instance tabulateFunction :: (Tabulate a) => Memoize (a -> r)
+(Tabulate a) => Memoize (a -> r)
 ```
 
 

@@ -11,11 +11,14 @@
     "output"
   ],
   "dependencies": {
-    "purescript-lazy": "^0.4.0",
-    "purescript-either": "^0.2.0",
-    "purescript-maybe": "^0.3.0",
-    "purescript-tuples": "^0.4.0",
-    "purescript-integers": "^0.2.0",
-    "purescript-lists": "^0.7.0"
+    "purescript-lazy": "^1.0.0",
+    "purescript-either": "^1.0.0",
+    "purescript-maybe": "^1.0.0",
+    "purescript-tuples": "^1.0.0",
+    "purescript-integers": "^1.0.0",
+    "purescript-lists": "^1.0.0"
+  },
+  "devDependencies": {
+    "purescript-console": "^1.0.0"
   }
 }
