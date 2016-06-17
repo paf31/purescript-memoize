@@ -7,17 +7,21 @@
 module Data.Function.Memoize
   ( class Tabulate
   , tabulate
-  , class Memoize
   , memoize
+  , memoize2
+  , memoize3
+  , gTabulate
   ) where
 
 import Prelude
-
+import Data.Char (fromCharCode, toCharCode)
 import Data.Either (Either(..))
+import Data.Generic (class Generic, GenericSpine(..), toSpine, fromSpine)
 import Data.Lazy (Lazy, force, defer)
-import Data.List (List(..))
-import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..))
+import Data.List (List(..), fromFoldable, toUnfoldable)
+import Data.Maybe (Maybe(..), fromJust)
+import Data.String (fromCharArray, toCharArray)
+import Data.Tuple (Tuple(..), curry, uncurry)
 
 -- | The `Tabulate` class identifies those types which can be used as the domain of
 -- | a memoized function, i.e. those for which the results can be _tabulated_.
@@ -32,6 +36,16 @@ instance tabulateBool :: Tabulate Boolean where
   tabulate f = let r1 = defer (\_ -> f true)
                    r2 = defer (\_ -> f false)
                in \b -> if b then r1 else r2
+
+instance tabulateChar :: Tabulate Char where
+  tabulate f = f1 <<< toCharCode
+    where
+      f1 = tabulate (f <<< fromCharCode)
+
+instance tabulateString :: Tabulate String where
+  tabulate f = f1 <<< toCharArray
+    where
+      f1 = tabulate (f <<< fromCharArray)
 
 instance tabulateMaybe :: Tabulate a => Tabulate (Maybe a) where
   tabulate f = let n = defer (\_ -> f Nothing)
@@ -61,6 +75,12 @@ instance tabulateList :: Tabulate a => Tabulate (List a) where
 
       fromList Nil = Nothing
       fromList (Cons head tail) = Just (Tuple head tail)
+
+
+instance tabulateArray :: Tabulate a => Tabulate (Array a) where
+  tabulate f = f1 <<< fromFoldable
+    where
+      f1 = tabulate (f <<< toUnfoldable)
 
 data NatTrie a = NatTrie (Lazy a)
                          (Lazy (NatTrie a))
@@ -102,13 +122,51 @@ instance tabulateNat :: Tabulate Int where
           walk (Cons false bs) (NatTrie _ l _) = l >>= walk bs
           walk (Cons true  bs) (NatTrie _ _ r) = r >>= walk bs
 
--- | The `Memoize` class identifies those function types which can be memoized.
--- |
--- | If the domain type can be tabulated, then functions can be memoized.
-class Memoize a where
-  memoize :: a -> a
+-- | Memoize a function of one argument
+memoize :: forall a b. Tabulate a => (a -> b) -> a -> b
+memoize f = force <<< f1
+  where
+    f1 = tabulate f
 
-instance tabulateFunction :: Tabulate a => Memoize (a -> r) where
-  memoize f = force <<< f1
-    where
-      f1 = tabulate f
+-- | Memoize a function of two arguments
+memoize2 :: forall a b c. (Tabulate a, Tabulate b) => (a -> b -> c) -> a -> b -> c
+memoize2 f = curry f1
+  where
+    f1 = memoize (uncurry f)
+
+-- | Memoize a function of three arguments
+memoize3 :: forall a b c d. (Tabulate a, Tabulate b, Tabulate c) => (a -> b -> c -> d) -> a -> b -> c -> d
+memoize3 f = curry (curry f1)
+  where
+    f1 = memoize (uncurry (uncurry f))
+
+instance tabulateSpine :: Partial => Tabulate GenericSpine where
+  tabulate f =
+    let
+      sProd    = tabulate (\(Tuple ctor args) -> f (SProd ctor (map const args)))
+      sRecord  = tabulate (f <<< SRecord <<< map (\(Tuple recLabel recValue) -> { recLabel, recValue: const recValue }))
+      sBoolean = tabulate (f <<< SBoolean)
+      sInt     = tabulate (f <<< SInt)
+      sString  = tabulate (f <<< SString)
+      sChar    = tabulate (f <<< SChar)
+      sArray   = tabulate (f <<< SArray <<< map const)
+      sUnit    = tabulate (f <<< (\(_ :: Unit) -> SUnit))
+    in case _ of
+         SProd ctor args  -> sProd (Tuple ctor (map (_ $ unit) args))
+         SRecord rec      -> sRecord (map (\{ recLabel, recValue } -> Tuple recLabel (recValue unit)) rec)
+         SBoolean b       -> sBoolean b
+         SInt i           -> sInt i
+         SString s        -> sString s
+         SChar c          -> sChar c
+         SArray arr       -> sArray (map (_ $ unit) arr)
+         SUnit            -> sUnit unit
+
+-- | A default implementation of `Tabulate` for `Generic` types.
+-- |
+-- | This function is marked as `Partial`, since it is not implemented
+-- | for the `Number` type, or types containing `Number`. However, all other
+-- | `Generic` types are supported.
+gTabulate :: forall a r. Partial => Generic a => (a -> r) -> a -> Lazy r
+gTabulate f = map fromJust <<< f1 <<< toSpine
+  where
+    f1 = tabulate (map f <<< fromSpine)

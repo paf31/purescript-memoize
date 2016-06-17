@@ -20,27 +20,51 @@ a memoized function, i.e. those for which the results can be _tabulated_.
 ``` purescript
 Tabulate Unit
 Tabulate Boolean
+Tabulate Char
+Tabulate String
 (Tabulate a) => Tabulate (Maybe a)
 (Tabulate a, Tabulate b) => Tabulate (Either a b)
 (Tabulate a, Tabulate b) => Tabulate (Tuple a b)
 (Tabulate a) => Tabulate (List a)
+(Tabulate a) => Tabulate (Array a)
 Tabulate Int
+(Partial) => Tabulate GenericSpine
 ```
 
-#### `Memoize`
+#### `memoize`
 
 ``` purescript
-class Memoize a where
-  memoize :: a -> a
+memoize :: forall a b. Tabulate a => (a -> b) -> a -> b
 ```
 
-The `Memoize` class identifies those function types which can be memoized.
+Memoize a function of one argument
 
-If the domain type can be tabulated, then functions can be memoized.
+#### `memoize2`
 
-##### Instances
 ``` purescript
-(Tabulate a) => Memoize (a -> r)
+memoize2 :: forall a b c. (Tabulate a, Tabulate b) => (a -> b -> c) -> a -> b -> c
 ```
+
+Memoize a function of two arguments
+
+#### `memoize3`
+
+``` purescript
+memoize3 :: forall a b c d. (Tabulate a, Tabulate b, Tabulate c) => (a -> b -> c -> d) -> a -> b -> c -> d
+```
+
+Memoize a function of three arguments
+
+#### `gTabulate`
+
+``` purescript
+gTabulate :: forall a r. Partial => Generic a => (a -> r) -> a -> Lazy r
+```
+
+A default implementation of `Tabulate` for `Generic` types.
+
+This function is marked as `Partial`, since it is not implemented
+for the `Number` type, or types containing `Number`. However, all other
+`Generic` types are supported.
 
 

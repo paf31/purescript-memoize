@@ -4,10 +4,9 @@ import Prelude
 
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, logShow)
-import Data.Function.Memoize (memoize)
-import Data.Array ((..))
-import Data.List (List(..), (:), fromFoldable, length)
-import Data.Tuple (Tuple(..))
+import Data.Function.Memoize (memoize, memoize2)
+import Data.List ((:), length, singleton)
+import Data.String (take, drop)
 
 data Diff a = Add a | Remove a
 
@@ -22,6 +21,7 @@ main = do
         go n _ 0 = n
         go n m i = go m (n + m) (i - 1)
 
+      -- Remove the call to memoize and this will be very slow
       fibonacci = memoize
         case _ of
           0 -> 0
@@ -33,13 +33,13 @@ main = do
   let smallest xs ys | length xs <= length ys = xs
                      | otherwise = ys
 
-      diff = memoize
-        case _ of
-          Tuple Nil xs -> map Add xs
-          Tuple xs Nil -> map Remove xs
-          Tuple (Cons x xs) (Cons y ys)
-            | x == y -> diff (Tuple xs ys)
-            | otherwise -> smallest (Add y    : diff (Tuple (Cons x xs) ys))
-                                    (Remove x : diff (Tuple xs (Cons y ys)))
-  logShow $ diff (Tuple (fromFoldable (1 .. 30))
-                        (fromFoldable (2 .. 31)))
+      -- Remove the call to memoize2 and this will be very slow
+      diff = memoize2
+        case _, _ of
+          "", s2 -> singleton (Add s2)
+          s1, "" -> singleton (Remove s1)
+          s1, s2
+            | take 1 s1 == take 1 s2 -> diff (drop 1 s1) (drop 1 s2)
+            | otherwise -> smallest (Add (take 1 s2)    : diff s1 (drop 1 s2))
+                                    (Remove (take 1 s1) : diff (drop 1 s1) s2)
+  logShow $ diff "Hello, PureScript" "ello, PureScript!"

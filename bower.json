@@ -16,7 +16,8 @@
     "purescript-maybe": "^1.0.0",
     "purescript-tuples": "^1.0.0",
     "purescript-integers": "^1.0.0",
-    "purescript-lists": "^1.0.0"
+    "purescript-lists": "^1.0.0",
+    "purescript-generics": "^1.0.0"
   },
   "devDependencies": {
     "purescript-console": "^1.0.0"
