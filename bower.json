@@ -1,6 +1,5 @@
 {
   "name": "purescript-memoize",
-  "version": "1.0.0",
   "moduleType": [
     "node"
   ],
@@ -10,6 +9,10 @@
     "bower_components",
     "output"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/paf31/purescript-memoize.git"
+  },
   "license": "MIT",
   "dependencies": {
     "purescript-lazy": "^1.0.0",
