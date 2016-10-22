@@ -1,10 +1,10 @@
 module Test.Main where
 
 import Prelude
-
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, logShow)
-import Data.Function.Memoize (memoize, memoize2)
+import Data.Function.Memoize (class Tabulate, memoize, memoize2, gTabulate)
+import Data.Generic.Rep (class Generic)
 import Data.List ((:), length, singleton)
 import Data.String (take, drop)
 
@@ -13,6 +13,15 @@ data Diff a = Add a | Remove a
 instance showDiff :: Show a => Show (Diff a) where
   show (Add a) = "(Add " <> show a <> ")"
   show (Remove a) = "(Remove " <> show a <> ")"
+
+data Ints
+  = Int1 Int
+  | Int2 Int
+
+derive instance genericInts :: Generic Ints _
+
+instance tabulateInts :: Tabulate Ints where
+  tabulate = gTabulate
 
 main :: forall eff. Eff (console :: CONSOLE | eff) Unit
 main = do
@@ -27,8 +36,18 @@ main = do
           0 -> 0
           1 -> 1
           n -> fibonacci (n - 1) + fibonacci (n - 2)
+
+      fibonacciInts = memoize
+        case _ of
+          Int1 0 -> 0
+          Int2 0 -> 0
+          Int1 1 -> 1
+          Int2 1 -> 1
+          Int1 n -> fibonacciInts (Int2 (n - 1)) + fibonacciInts (Int1 (n - 2))
+          Int2 n -> fibonacciInts (Int1 (n - 1)) + fibonacciInts (Int2 (n - 2))
   logShow $ fibonacciFast 40
   logShow $ fibonacci 40
+  logShow $ fibonacciInts (Int1 40)
 
   let smallest xs ys | length xs <= length ys = xs
                      | otherwise = ys

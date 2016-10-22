@@ -16,10 +16,11 @@ module Data.Function.Memoize
 import Prelude
 import Data.Char (fromCharCode, toCharCode)
 import Data.Either (Either(..))
-import Data.Generic (class Generic, GenericSpine(..), toSpine, fromSpine)
+import Data.Generic.Rep (class Generic, Argument(..), Constructor(..),
+                         NoArguments(..), Product(..), Sum(..), from, to)
 import Data.Lazy (Lazy, force, defer)
 import Data.List (List(..), fromFoldable, toUnfoldable)
-import Data.Maybe (Maybe(..), fromJust)
+import Data.Maybe (Maybe(..))
 import Data.String (fromCharArray, toCharArray)
 import Data.Tuple (Tuple(..), curry, uncurry)
 
@@ -30,6 +31,10 @@ class Tabulate a where
 
 instance tabulateUnit :: Tabulate Unit where
   tabulate f = let r = defer (\_ -> f unit)
+               in \_ -> r
+
+instance tabulateNoArguments :: Tabulate NoArguments where
+  tabulate f = let r = defer (\_ -> f NoArguments)
                in \_ -> r
 
 instance tabulateBool :: Tabulate Boolean where
@@ -47,24 +52,44 @@ instance tabulateString :: Tabulate String where
     where
       f1 = tabulate (f <<< fromCharArray)
 
+instance tabulateConstructor :: Tabulate a => Tabulate (Constructor name a) where
+  tabulate f = let g = tabulate (f <<< Constructor)
+               in g <<< \(Constructor a) -> a
+
+instance tabulateArgument :: Tabulate a => Tabulate (Argument a) where
+  tabulate f = let g = tabulate (f <<< Argument)
+               in g <<< \(Argument a) -> a
+
 instance tabulateMaybe :: Tabulate a => Tabulate (Maybe a) where
   tabulate f = let n = defer (\_ -> f Nothing)
                    j = tabulate (f <<< Just)
-               in \m -> case m of
-                          Nothing -> n
-                          Just a  -> j a
+               in case _ of
+                    Nothing -> n
+                    Just a  -> j a
 
 instance tabulateEither :: (Tabulate a, Tabulate b) => Tabulate (Either a b) where
   tabulate f = let l = tabulate (f <<< Left)
                    r = tabulate (f <<< Right)
-               in \e -> case e of
-                          Left a  -> l a
-                          Right b -> r b
+               in case _ of
+                    Left a  -> l a
+                    Right b -> r b
+
+instance tabulateSum :: (Tabulate a, Tabulate b) => Tabulate (Sum a b) where
+  tabulate f = let l = tabulate (f <<< Inl)
+                   r = tabulate (f <<< Inr)
+               in case _ of
+                    Inl a -> l a
+                    Inr b -> r b
 
 instance tabulateTuple :: (Tabulate a, Tabulate b) => Tabulate (Tuple a b) where
   tabulate f = let f' = tabulate \a -> tabulate \b -> f (Tuple a b)
                in \(Tuple a b) -> do g <- f' a
                                      g b
+
+instance tabulateProduct :: (Tabulate a, Tabulate b) => Tabulate (Product a b) where
+  tabulate f = let f' = tabulate \a -> tabulate \b -> f (Product a b)
+               in \(Product a b) -> do g <- f' a
+                                       g b
 
 instance tabulateList :: Tabulate a => Tabulate (List a) where
   tabulate f = let f' = tabulate (f <<< toList)
@@ -75,7 +100,6 @@ instance tabulateList :: Tabulate a => Tabulate (List a) where
 
       fromList Nil = Nothing
       fromList (Cons head tail) = Just (Tuple head tail)
-
 
 instance tabulateArray :: Tabulate a => Tabulate (Array a) where
   tabulate f = f1 <<< fromFoldable
@@ -140,33 +164,8 @@ memoize3 f = curry (curry f1)
   where
     f1 = memoize (uncurry (uncurry f))
 
-instance tabulateSpine :: Partial => Tabulate GenericSpine where
-  tabulate f =
-    let
-      sProd    = tabulate (\(Tuple ctor args) -> f (SProd ctor (map const args)))
-      sRecord  = tabulate (f <<< SRecord <<< map (\(Tuple recLabel recValue) -> { recLabel, recValue: const recValue }))
-      sBoolean = tabulate (f <<< SBoolean)
-      sInt     = tabulate (f <<< SInt)
-      sString  = tabulate (f <<< SString)
-      sChar    = tabulate (f <<< SChar)
-      sArray   = tabulate (f <<< SArray <<< map const)
-      sUnit    = tabulate (f <<< (\(_ :: Unit) -> SUnit))
-    in case _ of
-         SProd ctor args  -> sProd (Tuple ctor (map (_ $ unit) args))
-         SRecord rec      -> sRecord (map (\{ recLabel, recValue } -> Tuple recLabel (recValue unit)) rec)
-         SBoolean b       -> sBoolean b
-         SInt i           -> sInt i
-         SString s        -> sString s
-         SChar c          -> sChar c
-         SArray arr       -> sArray (map (_ $ unit) arr)
-         SUnit            -> sUnit unit
-
 -- | A default implementation of `Tabulate` for `Generic` types.
--- |
--- | This function is marked as `Partial`, since it is not implemented
--- | for the `Number` type, or types containing `Number`. However, all other
--- | `Generic` types are supported.
-gTabulate :: forall a r. Partial => Generic a => (a -> r) -> a -> Lazy r
-gTabulate f = map fromJust <<< f1 <<< toSpine
+gTabulate :: forall a r rep. (Generic a rep, Tabulate rep) => (a -> r) -> a -> Lazy r
+gTabulate f = f1 <<< from
   where
-    f1 = tabulate (map f <<< fromSpine)
+    f1 = tabulate (f <<< to)
