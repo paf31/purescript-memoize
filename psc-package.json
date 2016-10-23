@@ -1,0 +1,14 @@
+{
+    "name": "memoize",
+    "source": "https://github.com/paf31/purescript-memoize.git",
+    "set": "psc-0.10.1",
+    "depends": [
+      "lazy",
+      "either",
+      "maybe",
+      "tuples",
+      "integers",
+      "lists",
+      "generics-rep"
+    ]
+}
