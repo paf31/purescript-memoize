@@ -15,15 +15,15 @@
   },
   "license": "MIT",
   "dependencies": {
-    "purescript-lazy": "^1.0.0",
-    "purescript-either": "^1.0.0",
-    "purescript-maybe": "^1.0.0",
-    "purescript-tuples": "^1.0.0",
-    "purescript-integers": "^1.0.0",
-    "purescript-lists": "^1.0.0",
-    "purescript-generics": "^1.0.0"
+    "purescript-lazy": "^2.0.0",
+    "purescript-either": "^2.0.0",
+    "purescript-maybe": "^2.0.0",
+    "purescript-tuples": "^3.0.0",
+    "purescript-integers": "^2.0.0",
+    "purescript-lists": "^3.0.0",
+    "purescript-generics-rep": "^3.0.0"
   },
   "devDependencies": {
-    "purescript-console": "^1.0.0"
+    "purescript-console": "^2.0.0"
   }
 }

@@ -19,16 +19,20 @@ a memoized function, i.e. those for which the results can be _tabulated_.
 ##### Instances
 ``` purescript
 Tabulate Unit
+Tabulate NoArguments
 Tabulate Boolean
 Tabulate Char
 Tabulate String
+(Tabulate a) => Tabulate (Constructor name a)
+(Tabulate a) => Tabulate (Argument a)
 (Tabulate a) => Tabulate (Maybe a)
 (Tabulate a, Tabulate b) => Tabulate (Either a b)
+(Tabulate a, Tabulate b) => Tabulate (Sum a b)
 (Tabulate a, Tabulate b) => Tabulate (Tuple a b)
+(Tabulate a, Tabulate b) => Tabulate (Product a b)
 (Tabulate a) => Tabulate (List a)
 (Tabulate a) => Tabulate (Array a)
 Tabulate Int
-(Partial) => Tabulate GenericSpine
 ```
 
 #### `memoize`
@@ -58,13 +62,34 @@ Memoize a function of three arguments
 #### `gTabulate`
 
 ``` purescript
-gTabulate :: forall a r. Partial => Generic a => (a -> r) -> a -> Lazy r
+gTabulate :: forall a r rep. (Generic a rep, Tabulate rep) => (a -> r) -> a -> Lazy r
 ```
 
 A default implementation of `Tabulate` for `Generic` types.
 
-This function is marked as `Partial`, since it is not implemented
-for the `Number` type, or types containing `Number`. However, all other
-`Generic` types are supported.
+Given a data type made up of data types with `Tabulate` instances:
+
+```purescript
+data MyDataType
+  = A Int
+  | B String
+```
+
+First, derive an instance of `Data.Generics.Rep.Generic`:
+
+```purescript
+derive instance genericMyDataType :: Generic MyDataType _
+```
+
+Now, `Tabulate` can be defined in terms of `gTabulate`:
+
+```purescript
+instance tabulateMyDataType :: Tabulate MyDataType where
+  tabulate = gTabulate
+```
+
+_Note_: this function should not be used to derive instances for recursive
+data types, and attempting to do so will lead to stack overflow errors
+at runtime.
 
 

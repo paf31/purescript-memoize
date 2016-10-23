@@ -165,6 +165,31 @@ memoize3 f = curry (curry f1)
     f1 = memoize (uncurry (uncurry f))
 
 -- | A default implementation of `Tabulate` for `Generic` types.
+-- |
+-- | Given a data type made up of data types with `Tabulate` instances:
+-- |
+-- | ```purescript
+-- | data MyDataType
+-- |   = A Int
+-- |   | B String
+-- | ```
+-- |
+-- | First, derive an instance of `Data.Generics.Rep.Generic`:
+-- |
+-- | ```purescript
+-- | derive instance genericMyDataType :: Generic MyDataType _
+-- | ```
+-- |
+-- | Now, `Tabulate` can be defined in terms of `gTabulate`:
+-- |
+-- | ```purescript
+-- | instance tabulateMyDataType :: Tabulate MyDataType where
+-- |   tabulate = gTabulate
+-- | ```
+-- |
+-- | _Note_: this function should not be used to derive instances for recursive
+-- | data types, and attempting to do so will lead to stack overflow errors
+-- | at runtime.
 gTabulate :: forall a r rep. (Generic a rep, Tabulate rep) => (a -> r) -> a -> Lazy r
 gTabulate f = f1 <<< from
   where
