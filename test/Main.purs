@@ -3,7 +3,7 @@ module Test.Main where
 import Prelude
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, logShow)
-import Data.Function.Memoize (class Tabulate, memoize, memoize2, gTabulate)
+import Data.Function.Memoize (class Tabulate, memoize, memoize2, genericTabulate)
 import Data.Generic.Rep (class Generic)
 import Data.List ((:), length, singleton)
 import Data.String (take, drop)
@@ -21,7 +21,7 @@ data Ints
 derive instance genericInts :: Generic Ints _
 
 instance tabulateInts :: Tabulate Ints where
-  tabulate = gTabulate
+  tabulate = genericTabulate
 
 main :: forall eff. Eff (console :: CONSOLE | eff) Unit
 main = do

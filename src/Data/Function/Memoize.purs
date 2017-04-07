@@ -10,7 +10,7 @@ module Data.Function.Memoize
   , memoize
   , memoize2
   , memoize3
-  , gTabulate
+  , genericTabulate
   ) where
 
 import Prelude
@@ -153,13 +153,13 @@ memoize f = force <<< f1
     f1 = tabulate f
 
 -- | Memoize a function of two arguments
-memoize2 :: forall a b c. (Tabulate a, Tabulate b) => (a -> b -> c) -> a -> b -> c
+memoize2 :: forall a b c. Tabulate a => Tabulate b => (a -> b -> c) -> a -> b -> c
 memoize2 f = curry f1
   where
     f1 = memoize (uncurry f)
 
 -- | Memoize a function of three arguments
-memoize3 :: forall a b c d. (Tabulate a, Tabulate b, Tabulate c) => (a -> b -> c -> d) -> a -> b -> c -> d
+memoize3 :: forall a b c d. Tabulate a => Tabulate b => Tabulate c => (a -> b -> c -> d) -> a -> b -> c -> d
 memoize3 f = curry (curry f1)
   where
     f1 = memoize (uncurry (uncurry f))
@@ -180,17 +180,23 @@ memoize3 f = curry (curry f1)
 -- | derive instance genericMyDataType :: Generic MyDataType _
 -- | ```
 -- |
--- | Now, `Tabulate` can be defined in terms of `gTabulate`:
+-- | Now, `Tabulate` can be defined in terms of `genericTabulate`:
 -- |
 -- | ```purescript
 -- | instance tabulateMyDataType :: Tabulate MyDataType where
--- |   tabulate = gTabulate
+-- |   tabulate = genericTabulate
 -- | ```
 -- |
 -- | _Note_: this function should not be used to derive instances for recursive
 -- | data types, and attempting to do so will lead to stack overflow errors
 -- | at runtime.
-gTabulate :: forall a r rep. (Generic a rep, Tabulate rep) => (a -> r) -> a -> Lazy r
-gTabulate f = f1 <<< from
+genericTabulate
+  :: forall a r rep
+   . Generic a rep
+  => Tabulate rep
+  => (a -> r)
+  -> a
+  -> Lazy r
+genericTabulate f = f1 <<< from
   where
     f1 = tabulate (f <<< to)
