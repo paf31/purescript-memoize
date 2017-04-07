@@ -9,7 +9,7 @@ its domain type.
 #### `Tabulate`
 
 ``` purescript
-class Tabulate a where
+class Tabulate a  where
   tabulate :: forall r. (a -> r) -> a -> Lazy r
 ```
 
@@ -46,7 +46,7 @@ Memoize a function of one argument
 #### `memoize2`
 
 ``` purescript
-memoize2 :: forall a b c. (Tabulate a, Tabulate b) => (a -> b -> c) -> a -> b -> c
+memoize2 :: forall a b c. Tabulate a => Tabulate b => (a -> b -> c) -> a -> b -> c
 ```
 
 Memoize a function of two arguments
@@ -54,15 +54,15 @@ Memoize a function of two arguments
 #### `memoize3`
 
 ``` purescript
-memoize3 :: forall a b c d. (Tabulate a, Tabulate b, Tabulate c) => (a -> b -> c -> d) -> a -> b -> c -> d
+memoize3 :: forall a b c d. Tabulate a => Tabulate b => Tabulate c => (a -> b -> c -> d) -> a -> b -> c -> d
 ```
 
 Memoize a function of three arguments
 
-#### `gTabulate`
+#### `genericTabulate`
 
 ``` purescript
-gTabulate :: forall a r rep. (Generic a rep, Tabulate rep) => (a -> r) -> a -> Lazy r
+genericTabulate :: forall a r rep. Generic a rep => Tabulate rep => (a -> r) -> a -> Lazy r
 ```
 
 A default implementation of `Tabulate` for `Generic` types.
@@ -81,11 +81,11 @@ First, derive an instance of `Data.Generics.Rep.Generic`:
 derive instance genericMyDataType :: Generic MyDataType _
 ```
 
-Now, `Tabulate` can be defined in terms of `gTabulate`:
+Now, `Tabulate` can be defined in terms of `genericTabulate`:
 
 ```purescript
 instance tabulateMyDataType :: Tabulate MyDataType where
-  tabulate = gTabulate
+  tabulate = genericTabulate
 ```
 
 _Note_: this function should not be used to derive instances for recursive
