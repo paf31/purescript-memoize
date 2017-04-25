@@ -16,8 +16,8 @@ module Data.Function.Memoize
 import Prelude
 import Data.Char (fromCharCode, toCharCode)
 import Data.Either (Either(..))
-import Data.Generic.Rep (class Generic, Argument(..), Constructor(..),
-                         NoArguments(..), Product(..), Sum(..), from, to)
+import Data.Generic.Rep (class Generic, Argument(..), Constructor(..), NoArguments(..), Product(..), Sum(..), from, to)
+import Data.Int.Bits ((.&.), zshr)
 import Data.Lazy (Lazy, force, defer)
 import Data.List (List(..), fromFoldable, toUnfoldable)
 import Data.Maybe (Maybe(..))
@@ -117,18 +117,10 @@ instance tabulateNat :: Tabulate Int where
       tabulateImpl f = go
         where
           go :: Int -> Lazy r
-          go 0 = zer
-          go n = walk (bits (if n > 0 then n else (-n)))
-                      (if n > 0 then pos else neg)
+          go n = walk (bits n) trie
 
-          pos :: NatTrie r
-          pos = build 1
-
-          neg :: NatTrie r
-          neg = build (-1)
-
-          zer :: Lazy r
-          zer = defer \_ -> f 0
+          trie :: NatTrie r
+          trie = build 0
 
           build :: Int -> NatTrie r
           build n = NatTrie (defer \_ -> f n)
@@ -138,8 +130,8 @@ instance tabulateNat :: Tabulate Int where
           bits :: Int -> List Boolean
           bits = bits' Nil
             where
-            bits' acc 1 = acc
-            bits' acc n = bits' (Cons (mod n 2 /= 0) acc) (n / 2)
+            bits' acc 0 = acc
+            bits' acc n = bits' (Cons (n .&. 1 /= 0) acc) (n `zshr` 1)            
 
           walk :: forall a. List Boolean -> NatTrie a -> Lazy a
           walk Nil             (NatTrie a _ _) = a
