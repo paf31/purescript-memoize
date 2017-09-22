@@ -40,3 +40,6 @@ Note that `fibonacciSlow` has been modified to call the faster `fibonacci` funct
 
 The `memoize` function can be applied whenever there is a `Tabulate` instance for the function argument type. This library provides instances of the `Tabulate` type class for common types, such as `Maybe`, `Either` and `Tuple`.
 
+## Related resources
+
+- Slides: [Elegant memoization](https://github.com/conal/talk-2014-elegant-memoization/blob/master/README.md) by Conal Elliott - @conal
