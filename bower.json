@@ -15,19 +15,16 @@
   },
   "license": "MIT",
   "dependencies": {
-    "purescript-lazy": "^3.0.0",
-    "purescript-either": "^3.0.0",
-    "purescript-maybe": "^3.0.0",
-    "purescript-tuples": "^4.0.0",
-    "purescript-integers": "^3.0.0",
-    "purescript-lists": "^4.0.1",
-    "purescript-generics-rep": "^5.0.0",
-    "purescript-strings": "^3.0.0"
+    "purescript-lazy": "^4.0.0",
+    "purescript-either": "^4.0.0",
+    "purescript-maybe": "^4.0.0",
+    "purescript-tuples": "^5.0.0",
+    "purescript-integers": "^4.0.0",
+    "purescript-lists": "^5.0.0",
+    "purescript-generics-rep": "^6.0.0",
+    "purescript-strings": "^4.0.0"
   },
   "devDependencies": {
-    "purescript-refs": "^3.0.0",		
-    "purescript-console": "^3.0.0",
-    "purescript-assert": "^3.0.0",
-    "purescript-quickcheck": "^4.0.0" 
+    "purescript-console": "^4.0.0"
   }
 }

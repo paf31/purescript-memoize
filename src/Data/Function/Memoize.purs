@@ -20,9 +20,10 @@ import Data.Generic.Rep (class Generic, Argument(..), Constructor(..), NoArgumen
 import Data.Int.Bits ((.&.), zshr)
 import Data.Lazy (Lazy, force, defer)
 import Data.List (List(..), fromFoldable, toUnfoldable)
-import Data.Maybe (Maybe(..))
-import Data.String (fromCharArray, toCharArray)
+import Data.Maybe (Maybe(..), fromJust)
+import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Data.Tuple (Tuple(..), curry, uncurry)
+import Partial.Unsafe (unsafePartial)
 
 -- | The `Tabulate` class identifies those types which can be used as the domain of
 -- | a memoized function, i.e. those for which the results can be _tabulated_.
@@ -45,7 +46,7 @@ instance tabulateBool :: Tabulate Boolean where
 instance tabulateChar :: Tabulate Char where
   tabulate f = f1 <<< toCharCode
     where
-      f1 = tabulate (f <<< fromCharCode)
+      f1 = tabulate (f <<< unsafePartial fromJust <<< fromCharCode)
 
 instance tabulateString :: Tabulate String where
   tabulate f = f1 <<< toCharArray
